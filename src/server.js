@@ -12,7 +12,6 @@ app.get("/*", (req, res) => res.redirect("/"));
 
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
 
-
 // run on same port
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -20,13 +19,24 @@ const wss = new WebSocket.Server({ server });
 const sockets = [];
 
 wss.on("connection", (socket) => {
+    socket["nickname"] = "anonymous"
     sockets.push(socket);
     console.log("Connected to Browser ✅");
     socket.on("close", () => {console.log("Disconnected from Browser ❎")});
-    socket.on("message", message => {
-        socket.send(message.toString('utf-8'));
+    socket.on("message", msg => {
+        const message = JSON.parse(msg);
+        
+        switch(message.type) {
+            case "message":
+                for (const aSocket_num in sockets) {
+                    if (!(sockets[aSocket_num].nickname === socket.nickname))
+                        sockets[aSocket_num].send(`${socket.nickname}: ${message.payload}`);
+                }
+
+            case "nickname":
+                socket["nickname"] = message.payload;
+        }
     })
-    socket.send("hello!!!");
 })
 
-server.listen(3000, handleListen);
+server.listen(4000, handleListen);
