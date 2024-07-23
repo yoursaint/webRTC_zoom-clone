@@ -11,15 +11,50 @@ app.use("/public", express.static(__dirname+"/public"));
 app.get("/", (req, res) => res.render("home"));
 //app.get("/*", (req, res) => res.redirect("/"));
 
-const handleListen = () => console.log(`Listening on http://localhost:3000`);
+const handleListen = () => console.log(`Listening on http://localhost`);
 
 // run on same port
 const httpServer = http.createServer(app);
 const ioServer = SocketIO(httpServer);
 
+function publicRooms() {
+    const {
+        sockets: {
+            adapter: {sids, rooms},
+        },
+    } = ioServer;
+
+    const publicRooms = [];
+    rooms.forEach((_,key) => {
+        if (sids.get(key) === undefined) {
+            publicRooms.push(key);
+        }
+    });
+
+    return publicRooms.length;
+}
+
 ioServer.on("connection", socket => {
+    socket["name"] = "Anonymous"
+    socket.emit("public_room", publicRooms());
+
+    socket.onAny((event) => {
+        console.log(`Socket Event: ${event}`); 
+    });
     socket.on("enter_room", (roomName, done) => {
         socket.join(roomName.payload);
+        done();
+        socket.to(roomName.payload).emit("welcome", socket.name);
+    });
+    socket.on("disconnecting", () => {
+        socket.rooms.forEach(room => socket.to(room).emit("bye", socket.name));
+    });
+    socket.on("new_message", (message, roomName, done) => {
+        socket.to(roomName).emit("new_message", socket.name, message);
+        done();
+    });
+    socket.on("set_name", (name, done) => {
+        socket["name"] = name;
         done();
     });
 });
@@ -50,4 +85,4 @@ wss.on("connection", (socket) => {
 })
 */
 
-httpServer.listen(4000, handleListen);
+httpServer.listen(80, handleListen);

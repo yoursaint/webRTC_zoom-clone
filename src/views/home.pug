@@ -3,20 +3,24 @@ html(lang="en")
     head
         meta(charset="UTF-8")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
-        title Noom
+        title Instant Chat
         link(rel="stylesheet", href="https://unpkg.com/mvp.css")
     body 
         header
-            h1 Noom
+            h1 Instant Chat
         main
             div#welcome
+                h3
                 form
                     input(placeholder="room name", required, type="text")
                     button Enter Room
             div#room
                 h3
                 ul
-                form
+                form#name
+                    input(placeholder="anonymous", required, type="text")
+                    button Set Name
+                form#msg
                     input(placeholder="message", required, type="text")
                     button Send
         script(src="/socket.io/socket.io.js")
