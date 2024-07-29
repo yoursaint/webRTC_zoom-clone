@@ -82,11 +82,17 @@ socket.on("public_room", (room_num) => {
 
 socket.on("room_change", (rooms) => {
     const roomList = welcome.querySelector("ul");
+    
+    roomList.innerHTML = "";
+
+    /* 
     const lis = roomList.querySelectorAll("li");
 
+    삭제하는 방식
     lis.forEach((li) => {
         li.parentNode.removeChild(li);
     });
+    */
 
     rooms.forEach((room) => {
         const li = document.createElement("li");
