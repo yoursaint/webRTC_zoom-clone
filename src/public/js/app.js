@@ -79,3 +79,18 @@ socket.on("public_room", (room_num) => {
     const h3 = welcome.querySelector("h3");
     h3.innerText = `Current rooms : ${room_num}`;
 })
+
+socket.on("room_change", (rooms) => {
+    const roomList = welcome.querySelector("ul");
+    const lis = roomList.querySelectorAll("li");
+
+    lis.forEach((li) => {
+        li.parentNode.removeChild(li);
+    });
+
+    rooms.forEach((room) => {
+        const li = document.createElement("li");
+        li.innerText = room;
+        roomList.append(li);
+    });
+});

@@ -31,12 +31,12 @@ function publicRooms() {
         }
     });
 
-    return publicRooms.length;
+    return publicRooms;
 }
 
 ioServer.on("connection", socket => {
     socket["name"] = "Anonymous"
-    socket.emit("public_room", publicRooms());
+    socket.emit("public_room", publicRooms().length);
 
     socket.onAny((event) => {
         console.log(`Socket Event: ${event}`); 
@@ -45,9 +45,11 @@ ioServer.on("connection", socket => {
         socket.join(roomName.payload);
         done();
         socket.to(roomName.payload).emit("welcome", socket.name);
+        ioServer.sockets.emit("room_change", publicRooms());
     });
     socket.on("disconnecting", () => {
         socket.rooms.forEach(room => socket.to(room).emit("bye", socket.name));
+        ioServer.sockets.emit("room_change", publicRooms());
     });
     socket.on("new_message", (message, roomName, done) => {
         socket.to(roomName).emit("new_message", socket.name, message);
