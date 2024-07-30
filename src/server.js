@@ -1,6 +1,9 @@
 import http from "http"
-import SocketIO from "socket.io"
+import { Server } from "socket.io"
 import express from "express";
+
+import { instrument } from "@socket.io/admin-ui";
+
 import { Socket } from "dgram";
 
 const app = express();
@@ -15,7 +18,18 @@ const handleListen = () => console.log(`Listening on http://localhost`);
 
 // run on same port
 const httpServer = http.createServer(app);
-const ioServer = SocketIO(httpServer);
+const ioServer = new Server(httpServer, {
+    cors: {
+      origin: ["https://admin.socket.io"],
+      credentials: true
+    }
+  });
+
+  instrument(ioServer, {
+    auth: false,
+    mode: "development",
+  });
+  
 
 function publicRooms() {
     const {
@@ -34,9 +48,14 @@ function publicRooms() {
     return publicRooms;
 }
 
+function countRoom(roomName) {
+    return ioServer.sockets.adapter.rooms.get(roomName)?.size;
+}
+
 ioServer.on("connection", socket => {
     socket["name"] = "Anonymous"
     socket.emit("public_room", publicRooms().length);
+    socket.emit("room_change", publicRooms());
 
     socket.onAny((event) => {
         console.log(`Socket Event: ${event}`); 
@@ -44,12 +63,15 @@ ioServer.on("connection", socket => {
     socket.on("enter_room", (roomName, done) => {
         socket.join(roomName.payload);
         done();
-        socket.to(roomName.payload).emit("welcome", socket.name);
+        socket.to(roomName.payload).emit("welcome", socket.name, countRoom(roomName.payload));
         ioServer.sockets.emit("room_change", publicRooms());
     });
     socket.on("disconnecting", () => {
-        socket.rooms.forEach(room => socket.to(room).emit("bye", socket.name));
+        socket.rooms.forEach(room => 
+            socket.to(room).emit("bye", socket.name, countRoom(room) - 1)
+        );
         ioServer.sockets.emit("room_change", publicRooms());
+        ioServer.sockets.emit("public_room", publicRooms().length);
     });
     socket.on("new_message", (message, roomName, done) => {
         socket.to(roomName).emit("new_message", socket.name, message);
