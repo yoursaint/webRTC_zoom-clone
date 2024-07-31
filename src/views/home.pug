@@ -5,9 +5,14 @@ html(lang="en")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         title Instant Chat
         link(rel="stylesheet", href="https://unpkg.com/mvp.css")
+        style video { transform: scaleX(-1);}
     body 
         header
             h1 Instant Chat
         main
+            video#myFace(autoplay, playsinline, width="400", height="400")
+            button#mute Mute
+            button#camera Turn Camera Off
+            select#cameras(value="device") Face camera
         script(src="/socket.io/socket.io.js")
         script(src="/public/js/app.js") 
