@@ -20,4 +20,12 @@ const handleListen = () => console.log(`Listening on http://localhost`);
 const httpServer = http.createServer(app);
 const ioServer = new Server(httpServer);
 
+ioServer.on("connection", socket => {
+    socket.on("join_room", (roomName, done) => {
+        socket.join(roomName);
+        done();
+        socket.to(roomName).emit("welcome");
+    });
+});
+
 httpServer.listen(80, handleListen);

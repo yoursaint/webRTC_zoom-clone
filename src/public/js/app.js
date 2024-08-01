@@ -5,9 +5,15 @@ const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
 const cameraSelect = document.getElementById("cameras");
 
+const welcome = document.getElementById("welcome");
+const call = document.getElementById("call")
+
+call.hidden = true;
+
 let myStream;
 let muted = false;
 let cameraOff = false;
+let roomName;
 
 async function getCameras() {
     try {
@@ -86,8 +92,31 @@ async function handleCameraChange() {
     await getMedia(cameraSelect.value);
 }
 
-getMedia();
+async function startMedia() {
+    welcome.hidden = true;
+    call.hidden = false;
+    await getMedia();
+}
+
+function handleWelcomeSubmit(event) {
+    event.preventDefault();
+    const input = welcomeForm.querySelector("input");
+    socket.emit("join_room", input.value, startMedia);
+    roomName = input.value;
+    input.value = "";
+}
+
+welcomeForm = welcome.querySelector("form");
 
 muteBtn.addEventListener("click", handleMuteBtnClick);
 cameraBtn.addEventListener("click", handleCameraBtnClick);
 cameraSelect.addEventListener("input", handleCameraChange);
+welcomeForm.addEventListener("submit", handleWelcomeSubmit);
+
+// socket code
+
+socket.on("welcome", () => {
+    console.log("someone join")
+});
+
+// RTC code
