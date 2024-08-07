@@ -93,17 +93,18 @@ async function handleCameraChange() {
     await getMedia(cameraSelect.value);
 }
 
-async function startMedia() {
+async function initCall() {
     welcome.hidden = true;
     call.hidden = false;
     await getMedia();
     makeConnection();
 }
 
-function handleWelcomeSubmit(event) {
+async function handleWelcomeSubmit(event) {
     event.preventDefault();
     const input = welcomeForm.querySelector("input");
-    socket.emit("join_room", input.value, startMedia);
+    await initCall();
+    socket.emit("join_room", input.value);
     roomName = input.value;
     input.value = "";
 }
@@ -120,19 +121,46 @@ welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 socket.on("welcome", async () => {
     const offer = await myPeerConnection.createOffer();
     myPeerConnection.setLocalDescription(offer);
-    console.log("emit the offer")
     socket.emit("offer", roomName, offer);
 });
 
-socket.on("offer", offer => {
-    console.log(offer);
+socket.on("offer", async(offer) => {
+    //console.log("get an offer");
+    myPeerConnection.setRemoteDescription(offer);
+    const answer = await myPeerConnection.createAnswer();
+    myPeerConnection.setLocalDescription(answer);
+    //console.log("emit the answer");
+    socket.emit("answer", roomName, answer);
+});
+
+socket.on("answer", (answer) => {
+    console.log(answer);
+    myPeerConnection.setRemoteDescription(answer);
+});
+
+socket.on("ice", (ice) => {
+    console.log("received candidate");
+    myPeerConnection.addIceCandidate(ice);
 });
 
 // RTC code
 
+function handleIce(data) {
+    console.log("sent candidate");
+    socket.emit("ice", roomName, data.candidate);
+}
+
+function handleAddStream(data) {
+    const peersFace = document.getElementById("peersFace");
+    peersFace.srcObject = data.stream;
+}
+
 function makeConnection() {
     myPeerConnection = new RTCPeerConnection();
+    myPeerConnection.addEventListener("icecandidate", handleIce);
+    myPeerConnection.addEventListener("addstream", handleAddStream);
     myStream
     .getTracks()
     .forEach(track => myPeerConnection.addTrack(track, myStream));
 }
+

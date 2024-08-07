@@ -23,12 +23,19 @@ const ioServer = new Server(httpServer);
 ioServer.on("connection", socket => {
     socket.on("join_room", (roomName, done) => {
         socket.join(roomName);
-        done();
         socket.to(roomName).emit("welcome");
     });
 
     socket.on("offer", (roomName, offer) => {
         socket.to(roomName).emit("offer", offer);
+    });
+
+    socket.on("answer", (roomName, answer) => {
+        socket.to(roomName).emit("answer", answer);
+    });
+
+    socket.on("ice", (roomName, ice) => {
+        socket.to(roomName).emit("ice", ice);
     });
 });
 
