@@ -91,6 +91,13 @@ function handleCameraBtnClick() {
 
 async function handleCameraChange() {
     await getMedia(cameraSelect.value);
+    if (myPeerConnection) {
+        const videoTrack = myStream.getVideoTracks()[0];
+        const videoSender = myPeerConnection
+        .getSenders()
+        .find(sender => sender.track.kind === "video");
+        videoSender.replaceTrack(videoTrack);
+    }
 }
 
 async function initCall() {
@@ -125,11 +132,11 @@ socket.on("welcome", async () => {
 });
 
 socket.on("offer", async(offer) => {
-    //console.log("get an offer");
+    console.log("get an offer");
     myPeerConnection.setRemoteDescription(offer);
     const answer = await myPeerConnection.createAnswer();
     myPeerConnection.setLocalDescription(answer);
-    //console.log("emit the answer");
+    console.log("emit the answer");
     socket.emit("answer", roomName, answer);
 });
 
